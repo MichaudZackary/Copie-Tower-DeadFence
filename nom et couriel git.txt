@@ -1,0 +1,5 @@
+git config --global user.email "zackou2005@hotmail.com"
+git config --global user.name "Zackary Michaud"
+
+git config --global user.email "6207495@cegepat.qc.ca"
+git config --global user.name "Simon Clermont"

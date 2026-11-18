@@ -1,0 +1,17 @@
+Voici le fonctionnement du jeu :
+
+1 :Tu commences et tu dois entrer un nom d’utilisateur et un courriel valide avant de faire quoi que ce soit.
+2 : Choisis entre charger une partie déjà créée ou lancer une nouvelle partie.
+3 : Tu as de l’argent au départ : 50. Tu peux acheter des tours en cliquant sur les boutons avec des images d’éléments et de magie/bombes afin de choisir le type de tour. Le prix est affiché en dessous du score.
+4 : Une fois tes tours initiales placées, tu appuies sur le bouton Commencer pour lancer la vague.
+5 : Chaque fois que tu touches un ennemi, ton or augmente de 1. Tu peux ensuite le dépenser pour améliorer ou placer de nouvelles tours.
+6 : À la fin de la vague, le jeu se met en pause pour te donner le temps de placer de nouvelles tours, car tu as reçu un bonus d’argent qui augmente à chaque vague.
+
+Remarques :
+
+* : Tu peux détruire des tours avec le bouton Détruire la tour, situé juste au-dessus du bouton d’amélioration.
+* : Il y a 3 types d’ennemis et un boss apparaît toutes les 10 vagues.
+
+Voici le fonctionnement du Web :
+
+Tu lances le Web et les sauvegardes actuelles s’affichent.

@@ -1,0 +1,210 @@
+﻿@page "/"
+
+@using System.Text.Json
+@using System.Linq
+@using System.Reflection
+@using Jeu.Core.Services
+@using Jeu.Core.Domain
+@using Jeu.Core.Repositories
+
+@inject ISauvegardeService SauvegardeService
+@inject IUtilisateursRepository UtilisateursRepository
+@inject NavigationManager Navigation
+
+<PageTitle>Home</PageTitle>
+
+<h1>Voici Vos Sauvegardes :</h1>
+
+@if (isLoading)
+{
+    <p>Chargement des sauvegardes...</p>
+}
+else if (!string.IsNullOrEmpty(error))
+{
+    <div class="alert alert-danger">@error</div>
+}
+else if (sauvegardes == null || !sauvegardes.Any())
+{
+    <p>Aucune sauvegarde trouvée.</p>
+}
+else
+{
+    <!-- En-tête : nombre de sauvegardes + bouton actualiser -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div>
+            <strong>@sauvegardes.Count</strong> sauvegarde(s)
+        </div>
+        <div>
+            <button class="btn btn-secondary" @onclick="Refresh">Actualiser</button>
+        </div>
+    </div>
+
+    <!-- Liste des sauvegardes -->
+    <div class="row g-3">
+        @foreach (Sauvegarde s in sauvegardes)
+        {
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card h-100 shadow-sm">
+
+                    <!-- En-tête de la carte -->
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>
+                                @(string.IsNullOrWhiteSpace(s.NomSave)
+                                                        ?""
+                                                        : s.NomSave)
+                            </strong>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary">Vague @s.Vague</span>
+                        </div>
+                    </div>
+
+                    <!-- Corps de la carte -->
+                    <div class="card-body">
+                        <table class="table table-sm mb-2">
+                            <tbody>
+                                <tr>
+                                    <th scope="row" style="width:40%;">Utilisateur</th>
+                                    <td>@GetUserName(s.IdUser)</td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Argent</th>
+                                    <td>
+                                        <span class="badge bg-success">@s.Argent</span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th scope="row">Score</th>
+                                    <td>
+                                        <span class="badge bg-warning text-dark">@s.Score</span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pied de carte -->
+                    <div class="card-footer text-muted small">
+                        Affiché le @DateTime.Now.ToString("g")
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+
+    #region Attributs
+
+    /// <summary>
+    ///   Liste des sauvegardes chargées depuis le service
+    /// </summary>
+    private List<Sauvegarde>? sauvegardes;
+
+    /// <summary>
+    ///   Indique si les données sont en cours de chargement
+    /// </summary>
+    private bool isLoading = true;
+
+    /// <summary>
+    ///   Message d'erreur affiché à l'utilisateur
+    /// </summary>
+    private string? error;
+
+    /// <summary>
+    ///   Cache des noms d'utilisateurs (IdUser -> Username)
+    /// </summary>
+    private Dictionary<int, string> userNames = new();
+
+    #endregion
+
+    #region Cycle de vie
+
+    /// <summary>
+    ///   Méthode appelée lors de l'initialisation du composant
+    /// </summary>
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSauvegardesAsync();
+    }
+
+    #endregion
+
+    #region Méthodes
+
+    /// <summary>
+    ///   Charge toutes les sauvegardes depuis le service
+    /// </summary>
+    private async Task LoadSauvegardesAsync()
+    {
+        isLoading = true;
+        error = null;
+
+        try
+        {
+            var result = await SauvegardeService.GetAllAsync();
+
+            sauvegardes = result?.OfType<Sauvegarde>().ToList()
+                          ?? new List<Sauvegarde>();
+
+            await ChargerNomsUtilisateursAsync();
+        }
+        catch (Exception ex)
+        {
+            error = $"Erreur lors du chargement des sauvegardes : {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    /// <summary>
+    ///   Recharge les sauvegardes (bouton Actualiser)
+    /// </summary>
+    private Task Refresh() => LoadSauvegardesAsync();
+
+    /// <summary>
+    ///   Charge les noms des utilisateurs associés aux sauvegardes
+    /// </summary>
+    private async Task ChargerNomsUtilisateursAsync()
+    {
+        userNames.Clear();
+
+        if (sauvegardes == null || !sauvegardes.Any())
+            return;
+
+        var ids = sauvegardes.Select(s => s.IdUser).Distinct();
+
+        foreach (var id in ids)
+        {
+            try
+            {
+                var u = await Task.Run(() => UtilisateursRepository.Obtenir(id));
+                userNames[id] = string.IsNullOrWhiteSpace(u?.Username)
+                    ? $"Utilisateur {id}"
+                    : u.Username;
+            }
+            catch
+            {
+                userNames[id] = $"Utilisateur {id}";
+            }
+        }
+    }
+
+    /// <summary>
+    ///   Retourne le nom de l'utilisateur à partir de son identifiant
+    /// </summary>
+    /// <param name="id">Identifiant de l'utilisateur</param>
+    /// <returns>Nom de l'utilisateur ou valeur par défaut</returns>
+    private string GetUserName(int id)
+    {
+        return userNames.TryGetValue(id, out var name)
+            ? name
+            : $"Utilisateur {id}";
+    }
+    #endregion
+}
